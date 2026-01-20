@@ -13,7 +13,9 @@
   const video = document.getElementById('remoteVideo');
   const pc = new RTCPeerConnection();
 
-  const socket = new WebSocket('wss://TON-SERVEUR-SIGNALING');
+const socket = new WebSocket(
+  'wss://theo-bgll-github-io.onrender.com'
+);
 
   pc.ontrack = (event) => {
     video.srcObject = event.streams[0];
@@ -43,3 +45,4 @@
 
 </body>
 </html>
+
