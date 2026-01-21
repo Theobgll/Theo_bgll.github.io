@@ -22,16 +22,9 @@
   };
 
   socket.onmessage = async (msg) => {
-    // ⚠️ IMPORTANT : parfois msg.data est un Blob
-    const dataRaw = msg.data;
+    if (typeof msg.data !== "string") return; // ignore blobs
 
-    // si ce n'est pas une string, ignore
-    if (typeof dataRaw !== "string") {
-      console.log("Message reçu (non JSON) -> ignore:", dataRaw);
-      return;
-    }
-
-    const data = JSON.parse(dataRaw);
+    const data = JSON.parse(msg.data);
 
     if (data.type === 'offer') {
       pc = new RTCPeerConnection();
