@@ -22,6 +22,11 @@
   const socket = new WebSocket('wss://theo-bgll-github-io.onrender.com');
 
   socket.onopen = () => console.log("WebSocket connecté (user)");
+  socket.onopen = () => {
+  console.log("WebSocket connecté (user)");
+  socket.send(JSON.stringify({ type: "user-ready" }));
+};
+
 
   socket.onmessage = async (msg) => {
     if (typeof msg.data !== "string") return; // ignore blobs
@@ -71,3 +76,4 @@
 
 </body>
 </html>
+
