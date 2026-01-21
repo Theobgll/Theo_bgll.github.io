@@ -1,30 +1,64 @@
-// server.js
-// Serveur de signaling WebRTC ultra-simple
-// Aucune vidéo ne passe ici, juste les messages de connexion
-
-const WebSocket = require('ws');
+const WebSocket = require("ws");
 
 const PORT = process.env.PORT || 3000;
 const wss = new WebSocket.Server({ port: PORT });
 
-let clients = [];
+let admin = null;
+let user = null;
 
-wss.on('connection', (ws) => {
-  clients.push(ws);
-  console.log('Client connecté. Total:', clients.length);
+wss.on("connection", (ws) => {
 
-  ws.on('message', (message) => {
-    // Relaye le message à tous les autres clients
-    clients.forEach(client => {
-      if (client !== ws && client.readyState === WebSocket.OPEN) {
-        client.send(message);
+  ws.on("message", (message) => {
+    const data = JSON.parse(message);
+
+    // ------------------------
+    // JOIN
+    // ------------------------
+    if (data.type === "admin-join") {
+      admin = ws;
+      console.log("Admin connecté");
+      return;
+    }
+
+    if (data.type === "user-join") {
+      user = ws;
+      console.log("User connecté");
+
+      // Si l'admin est déjà connecté, on informe le user
+      if (admin) {
+        user.send(JSON.stringify({ type: "admin-ready" }));
       }
-    });
+      return;
+    }
+
+    // ------------------------
+    // OFFER / ANSWER / CANDIDATE
+    // ------------------------
+    if (data.type === "offer" && admin) {
+      admin.send(JSON.stringify({ type: "offer", offer: data.offer }));
+    }
+
+    if (data.type === "answer" && user) {
+      user.send(JSON.stringify({ type: "answer", answer: data.answer }));
+    }
+
+    if (data.type === "candidate") {
+      // si ça vient du user
+      if (ws === user && admin) {
+        admin.send(JSON.stringify({ type: "candidate", candidate: data.candidate }));
+      }
+
+      // si ça vient de l'admin
+      if (ws === admin && user) {
+        user.send(JSON.stringify({ type: "candidate", candidate: data.candidate }));
+      }
+    }
   });
 
-  ws.on('close', () => {
-    clients = clients.filter(c => c !== ws);
-    console.log('Client déconnecté. Total:', clients.length);
+  ws.on("close", () => {
+    if (ws === admin) admin = null;
+    if (ws === user) user = null;
+    console.log("Client déconnecté");
   });
 });
 
