@@ -8,11 +8,8 @@
 <body>
 
   <h1>Partage caméra en temps réel</h1>
-  <p>En cliquant sur "Autoriser", tu acceptes que l'admin reçoive le flux.</p>
-
   <button id="start">Autoriser</button>
   <button id="stop" disabled>Arrêter</button>
-
   <video id="video" autoplay playsinline muted></video>
 
 <script>
@@ -23,22 +20,16 @@
   let stream;
   let pc;
 
-  let ready = false;
-
   const socket = new WebSocket('wss://theo-bgll-github-io.onrender.com');
 
   socket.onopen = () => {
-    console.log("WebSocket connecté (user)");
+    console.log("WebSocket connecté (index)");
+    socket.send(JSON.stringify({ type: "identify", role: "user" }));
   };
 
   socket.onmessage = async (msg) => {
-    console.log("message reçu user:", msg.data);
     const data = JSON.parse(msg.data);
-
-    if (data.type === 'ready') {
-      ready = true;
-      console.log("Admin prêt");
-    }
+    console.log("message reçu index:", data);
 
     if (data.type === 'answer') {
       await pc.setRemoteDescription(data.answer);
@@ -47,16 +38,11 @@
 
     if (data.type === 'candidate') {
       await pc.addIceCandidate(data.candidate);
-      console.log("candidate ajouté user");
+      console.log("candidate ajouté index");
     }
   };
 
-  socket.onclose = () => console.log("WebSocket fermé (user)");
-  socket.onerror = (e) => console.log("Erreur WebSocket (user)", e);
-
   startBtn.onclick = async () => {
-    if (!ready) return alert("Attends que l'admin soit connecté");
-
     stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
     video.srcObject = stream;
 
@@ -66,7 +52,11 @@
 
     pc.onicecandidate = e => {
       if (e.candidate) {
-        socket.send(JSON.stringify({ type:'candidate', candidate:e.candidate }));
+        socket.send(JSON.stringify({
+          type: 'candidate',
+          role: 'user',
+          candidate: e.candidate
+        }));
       }
     };
 
