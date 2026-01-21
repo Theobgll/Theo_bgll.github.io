@@ -21,7 +21,7 @@
   };
 
   socket.onmessage = async (msg) => {
-    const data = JSON.parse(msg.data); // ok maintenant
+    const data = JSON.parse(msg.data);
     console.log("message reçu admin:", data);
 
     if (data.type === 'offer') {
