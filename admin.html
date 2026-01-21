@@ -11,11 +11,17 @@
 
 <script>
   const video = document.getElementById('remoteVideo');
-  const pc = new RTCPeerConnection();
 
-const socket = new WebSocket(
-  'wss://theo-bgll-github-io.onrender.com'
-);
+  const pc = new RTCPeerConnection({
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+  });
+
+  const socket = new WebSocket('wss://theo-bgll-github-io.onrender.com');
+
+  socket.onopen = () => {
+    console.log("WebSocket connecté (admin)");
+    socket.send(JSON.stringify({ type: "admin-join" }));
+  };
 
   pc.ontrack = (event) => {
     video.srcObject = event.streams[0];
@@ -25,14 +31,14 @@ const socket = new WebSocket(
     const data = JSON.parse(msg.data);
 
     if (data.type === 'offer') {
-      await pc.setRemoteDescription(data.offer);
+      await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       socket.send(JSON.stringify({ type: 'answer', answer }));
     }
 
     if (data.type === 'candidate') {
-      await pc.addIceCandidate(data.candidate);
+      await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
     }
   };
 
@@ -45,4 +51,3 @@ const socket = new WebSocket(
 
 </body>
 </html>
-
